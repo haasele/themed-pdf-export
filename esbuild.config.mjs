@@ -29,7 +29,8 @@ const context = await esbuild.context({
   sourcemap: prod ? false : "inline",
   treeShaking: true,
   outfile: "main.js",
-  minify: prod,
+  // Unminified output: easier to diff, debug, and matches typical Obsidian plugin releases.
+  minify: false,
 });
 
 if (prod) {
