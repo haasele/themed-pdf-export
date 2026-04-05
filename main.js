@@ -117,7 +117,7 @@ var ThemePdfSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Themed PDF export").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Export Settings").setHeading();
     new import_obsidian.Setting(containerEl).setName("Page size").addDropdown(
       (d) => d.addOption("A4", "A4").addOption("Letter", "Letter").addOption("A3", "A3").setValue(this.plugin.settings.pageSize).onChange((v) => {
         this.plugin.settings.pageSize = v;
