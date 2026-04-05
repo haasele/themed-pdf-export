@@ -100,7 +100,7 @@ export default class ThemedPdfExport extends Plugin {
 			overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
 
 			await sleep(100);
-			new Notice('Choose "Save as PDF" in the print dialog');
+			new Notice('Choose "Save as PDF" in the print dialog.');
 			window.print();
 
 			document.body.removeChild(overlay);
@@ -169,7 +169,7 @@ class ThemePdfSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Include title")
-			.setDesc("Add the note title (Properties title, or file name) above the note body in the PDF.")
+			.setDesc("Add the note title (properties title, or file name) above the note body in the PDF.")
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.includeTitle).onChange((v) => {
 					this.plugin.settings.includeTitle = v;
