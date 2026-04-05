@@ -136,7 +136,9 @@ class ThemePdfSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		new Setting(containerEl).setName("Themed PDF export").setHeading();
+		new Setting(containerEl)
+		.setName("Export Settings")
+		.setHeading();
 
 		new Setting(containerEl)
 			.setName("Page size")
