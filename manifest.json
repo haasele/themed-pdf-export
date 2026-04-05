@@ -3,7 +3,7 @@
   "name": "Themed PDF Export",
   "version": "1.0.0",
   "minAppVersion": "1.4.0",
-  "description": "Export notes as PDF using your active theme, including callouts, CSS snippets and dark/light mode.",
+  "description": "Exports notes as a PDF while preserving your active Theme, including callouts and Codeblocks.",
   "author": "haasele",
   "authorUrl": "https://github.com/haasele/",
   "fundingUrl": "",

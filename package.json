@@ -1,7 +1,7 @@
 {
   "name": "themed-pdf-export",
   "version": "1.0.0",
-  "description": "Export Obsidian notes as PDF with the active theme, your callout design and code snippets",
+  "description": "Exports notes as a PDF while preserving your active Theme, including callouts and Codeblocks.",
   "main": "main.js",
   "packageManager": "bun@1.3.11",
   "scripts": {
