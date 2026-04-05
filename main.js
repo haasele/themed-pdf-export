@@ -35,9 +35,9 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
     this.addRibbonIcon("file-down", "Export as PDF with theme", () => {
       const view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
       if (view == null ? void 0 : view.file) {
-        this.exportNote(view.file);
+        void this.exportNote(view.file);
       } else {
-        new import_obsidian.Notice("Open a Markdown note first.");
+        new import_obsidian.Notice("Open a markdown note first.");
       }
     });
     this.addCommand({
@@ -47,7 +47,7 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
         const view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
         if (view == null ? void 0 : view.file) {
           if (!checking)
-            this.exportNote(view.file);
+            void this.exportNote(view.file);
           return true;
         }
         return false;
@@ -58,7 +58,7 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
   async exportNote(file) {
     new import_obsidian.Notice(`Rendering "${file.basename}"\u2026`);
     const tmp = document.createElement("div");
-    tmp.style.cssText = "position:absolute;left:-99999px;top:0;width:800px;";
+    tmp.classList.add("theme-pdf-export-tmp");
     document.body.appendChild(tmp);
     const content = await this.app.vault.read(file);
     await import_obsidian.MarkdownRenderer.render(this.app, content, tmp, file.path, this);
@@ -71,74 +71,21 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
     const overlay = document.createElement("div");
     overlay.id = "theme-pdf-overlay";
     const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
-    overlay.className = `markdown-preview-view markdown-rendered ${themeClass}`;
-    overlay.innerHTML = tmp.innerHTML;
+    overlay.classList.add("markdown-preview-view", "markdown-rendered", themeClass);
+    for (const c of printPageClassNames(this.settings.pageSize, this.settings.orientation)) {
+      overlay.classList.add(c);
+    }
+    while (tmp.firstChild) {
+      overlay.appendChild(tmp.firstChild);
+    }
     document.body.removeChild(tmp);
     document.body.appendChild(overlay);
-    const pageSizeCss = this.settings.orientation === "landscape" ? `${this.settings.pageSize} landscape` : this.settings.pageSize;
     const marginSpec = this.settings.margins.trim();
     const overlayPadding = /\s/.test(marginSpec) ? marginSpec : `calc(${marginSpec} * 1.4) ${marginSpec}`;
-    const style = document.createElement("style");
-    style.id = "theme-pdf-print-style";
-    style.textContent = `
-      @media screen {
-        #theme-pdf-overlay { display: none !important; }
-      }
-      @media print {
-        /* Page margin boxes stay unstyled (white) in Chromium \u2014 use 0 and inset content via overlay padding */
-        @page {
-          size: ${pageSizeCss};
-          margin: 0 !important;
-        }
-
-        /* Full-bleed theme to sheet edges */
-        html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-          background-color: var(--background-primary) !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        body > *:not(#theme-pdf-overlay) {
-          display: none !important;
-          visibility: hidden !important;
-        }
-
-        /*
-         * Without box-decoration-break: clone, only the first fragment gets padding-top and
-         * only the last gets padding-bottom \u2014 middle pages look tight vs page 1.
-         * Clone repeats padding (and background) on every fragment so all sheets match.
-         * Slightly taller vertical padding approximates Obsidian preview space above/below content.
-         */
-        #theme-pdf-overlay {
-          display: block !important;
-          position: static !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: ${overlayPadding} !important;
-          box-sizing: border-box !important;
-          box-decoration-break: clone !important;
-          -webkit-box-decoration-break: clone !important;
-          overflow: visible !important;
-          background-color: var(--background-primary) !important;
-          color: var(--text-normal) !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        #theme-pdf-overlay img,
-        #theme-pdf-overlay video,
-        #theme-pdf-overlay svg {
-          max-width: 100% !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+    overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
     await sleep(100);
-    new import_obsidian.Notice('\u{1F4C4} Choose "Save as PDF" in the print dialog');
+    new import_obsidian.Notice('Choose "Save as PDF" in the print dialog');
     window.print();
-    document.head.removeChild(style);
     document.body.removeChild(overlay);
   }
   async loadSettings() {
@@ -156,33 +103,37 @@ var ThemePdfSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Theme PDF Export" });
+    new import_obsidian.Setting(containerEl).setName("Theme PDF export").setHeading();
     new import_obsidian.Setting(containerEl).setName("Page size").addDropdown(
-      (d) => d.addOption("A4", "A4").addOption("Letter", "Letter").addOption("A3", "A3").setValue(this.plugin.settings.pageSize).onChange(async (v) => {
+      (d) => d.addOption("A4", "A4").addOption("Letter", "Letter").addOption("A3", "A3").setValue(this.plugin.settings.pageSize).onChange((v) => {
         this.plugin.settings.pageSize = v;
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     );
     new import_obsidian.Setting(containerEl).setName("Orientation").addDropdown(
-      (d) => d.addOption("portrait", "Portrait").addOption("landscape", "Landscape").setValue(this.plugin.settings.orientation).onChange(async (v) => {
+      (d) => d.addOption("portrait", "Portrait").addOption("landscape", "Landscape").setValue(this.plugin.settings.orientation).onChange((v) => {
         this.plugin.settings.orientation = v;
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     );
     new import_obsidian.Setting(containerEl).setName("Include title").setDesc("Add the note title (Properties title, or file name) above the note body in the PDF.").addToggle(
-      (t) => t.setValue(this.plugin.settings.includeTitle).onChange(async (v) => {
+      (t) => t.setValue(this.plugin.settings.includeTitle).onChange((v) => {
         this.plugin.settings.includeTitle = v;
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     );
     new import_obsidian.Setting(containerEl).setName("Page margins").setDesc("CSS value, e.g. 20mm or 1in").addText(
-      (t) => t.setValue(this.plugin.settings.margins).onChange(async (v) => {
+      (t) => t.setValue(this.plugin.settings.margins).onChange((v) => {
         this.plugin.settings.margins = v;
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     );
   }
 };
+function printPageClassNames(pageSize, orientation) {
+  const slug = pageSize === "Letter" ? "letter" : pageSize.toLowerCase();
+  return [`theme-pdf-page-${slug}`, `theme-pdf-orient-${orientation}`];
+}
 function resolveExportTitle(app, file) {
   var _a;
   const fm = (_a = app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter;
