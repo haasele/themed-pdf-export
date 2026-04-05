@@ -26,7 +26,8 @@ var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
   pageSize: "A4",
   margins: "20mm",
-  orientation: "portrait"
+  orientation: "portrait",
+  includeTitle: false
 };
 var ThemedPdfExport = class extends import_obsidian.Plugin {
   async onload() {
@@ -62,6 +63,11 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
     const content = await this.app.vault.read(file);
     await import_obsidian.MarkdownRenderer.render(this.app, content, tmp, file.path, this);
     await sleep(800);
+    if (this.settings.includeTitle) {
+      const title = resolveExportTitle(this.app, file);
+      const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
+      tmp.prepend(h1);
+    }
     const overlay = document.createElement("div");
     overlay.id = "theme-pdf-overlay";
     const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
@@ -163,6 +169,12 @@ var ThemePdfSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
+    new import_obsidian.Setting(containerEl).setName("Include title").setDesc("Add the note title (Properties title, or file name) above the note body in the PDF.").addToggle(
+      (t) => t.setValue(this.plugin.settings.includeTitle).onChange(async (v) => {
+        this.plugin.settings.includeTitle = v;
+        await this.plugin.saveSettings();
+      })
+    );
     new import_obsidian.Setting(containerEl).setName("Page margins").setDesc("CSS value, e.g. 20mm or 1in").addText(
       (t) => t.setValue(this.plugin.settings.margins).onChange(async (v) => {
         this.plugin.settings.margins = v;
@@ -171,6 +183,16 @@ var ThemePdfSettingTab = class extends import_obsidian.PluginSettingTab {
     );
   }
 };
+function resolveExportTitle(app, file) {
+  var _a;
+  const fm = (_a = app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter;
+  if (fm != null && fm.title != null) {
+    const s = String(fm.title).trim();
+    if (s)
+      return s;
+  }
+  return file.basename.replace(/\.md$/i, "");
+}
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
