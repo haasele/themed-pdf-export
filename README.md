@@ -36,9 +36,14 @@ For example:
 
 ## PDF Examples
 
-<img width="893" height="660" alt="image" src="https://github.com/user-attachments/assets/5dc5ecb5-de9e-4e3b-be46-c162d7f8bd14" />
-<img width="979" height="640" alt="image" src="https://github.com/user-attachments/assets/9d618d83-6936-43a2-9f95-60717d2a61e8" />
-<img width="901" height="660" alt="image" src="https://github.com/user-attachments/assets/51098f1d-268c-45e0-820e-3f8199deab9d" />
+<img width="942" height="1193" alt="image" src="https://github.com/user-attachments/assets/718b2742-c56d-4621-a75d-20ab06675c2d" />
+
+
+<img width="937" height="769" alt="image" src="https://github.com/user-attachments/assets/5e10856b-737e-4c96-b46c-b2249114416d" />
+
+
+<img width="941" height="751" alt="image" src="https://github.com/user-attachments/assets/48aaef06-8e77-49a2-833e-3a86501130fe" />
+
 
 
 
