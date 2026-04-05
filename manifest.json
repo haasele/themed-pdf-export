@@ -1,7 +1,7 @@
 {
   "id": "themed-pdf-export",
   "name": "Themed PDF Export",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.4.0",
   "description": "Exports notes as a PDF while preserving your active Theme, including callouts and Codeblocks.",
   "author": "haasele",
