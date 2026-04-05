@@ -34,4 +34,12 @@ For example:
 
 ---
 
+## PDF Examples
+
+<img width="893" height="660" alt="image" src="https://github.com/user-attachments/assets/5dc5ecb5-de9e-4e3b-be46-c162d7f8bd14" />
+<img width="979" height="640" alt="image" src="https://github.com/user-attachments/assets/9d618d83-6936-43a2-9f95-60717d2a61e8" />
+<img width="901" height="660" alt="image" src="https://github.com/user-attachments/assets/51098f1d-268c-45e0-820e-3f8199deab9d" />
+
+
+
 Have Fun!
