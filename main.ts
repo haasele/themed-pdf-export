@@ -15,12 +15,14 @@ interface ThemePdfSettings {
 	pageSize: string;
 	margins: string;
 	orientation: PageOrientation;
+	includeTitle: boolean;
 }
 
 const DEFAULT_SETTINGS: ThemePdfSettings = {
 	pageSize: "A4",
 	margins: "20mm",
 	orientation: "portrait",
+	includeTitle: false,
 };
 
 export default class ThemedPdfExport extends Plugin {
@@ -64,6 +66,12 @@ export default class ThemedPdfExport extends Plugin {
 		const content = await this.app.vault.read(file);
 		await MarkdownRenderer.render(this.app, content, tmp, file.path, this as any);
 		await sleep(800);
+
+		if (this.settings.includeTitle) {
+			const title = resolveExportTitle(this.app, file);
+			const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
+			tmp.prepend(h1);
+		}
 
 		const overlay = document.createElement("div");
 		overlay.id = "theme-pdf-overlay";
@@ -199,6 +207,16 @@ class ThemePdfSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Include title")
+			.setDesc("Add the note title (Properties title, or file name) above the note body in the PDF.")
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.includeTitle).onChange(async (v) => {
+					this.plugin.settings.includeTitle = v;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
 			.setName("Page margins")
 			.setDesc("CSS value, e.g. 20mm or 1in")
 			.addText((t) =>
@@ -210,6 +228,15 @@ class ThemePdfSettingTab extends PluginSettingTab {
 					})
 			);
 	}
+}
+
+function resolveExportTitle(app: App, file: TFile): string {
+	const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+	if (fm != null && fm.title != null) {
+		const s = String(fm.title).trim();
+		if (s) return s;
+	}
+	return file.basename.replace(/\.md$/i, "");
 }
 
 function sleep(ms: number): Promise<void> {
