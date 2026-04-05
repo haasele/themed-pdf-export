@@ -1,5 +1,6 @@
 import {
 	App,
+	Component,
 	Plugin,
 	PluginSettingTab,
 	Setting,
@@ -36,7 +37,7 @@ export default class ThemedPdfExport extends Plugin {
 			if (view?.file) {
 				void this.exportNote(view.file);
 			} else {
-				new Notice("Open a markdown note first.");
+				new Notice("Open a Markdown note first.");
 			}
 		});
 
@@ -63,41 +64,56 @@ export default class ThemedPdfExport extends Plugin {
 		tmp.classList.add("theme-pdf-export-tmp");
 		document.body.appendChild(tmp);
 
-		const content = await this.app.vault.read(file);
-		await MarkdownRenderer.render(this.app, content, tmp, file.path, this);
-		await sleep(800);
+		const renderOwner = new Component();
+		renderOwner.load();
 
-		if (this.settings.includeTitle) {
-			const title = resolveExportTitle(this.app, file);
-			const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
-			tmp.prepend(h1);
+		let overlay: HTMLDivElement | undefined;
+		try {
+			const content = await this.app.vault.read(file);
+			await MarkdownRenderer.render(this.app, content, tmp, file.path, renderOwner);
+			await sleep(800);
+
+			if (this.settings.includeTitle) {
+				const title = resolveExportTitle(this.app, file);
+				const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
+				tmp.prepend(h1);
+			}
+
+			overlay = document.createElement("div");
+			overlay.id = "theme-pdf-overlay";
+			const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
+			overlay.classList.add("markdown-preview-view", "markdown-rendered", themeClass);
+			for (const c of printPageClassNames(this.settings.pageSize, this.settings.orientation)) {
+				overlay.classList.add(c);
+			}
+
+			while (tmp.firstChild) {
+				overlay.appendChild(tmp.firstChild);
+			}
+			document.body.removeChild(tmp);
+			document.body.appendChild(overlay);
+
+			const marginSpec = this.settings.margins.trim();
+			const overlayPadding = /\s/.test(marginSpec)
+				? marginSpec
+				: `calc(${marginSpec} * 1.4) ${marginSpec}`;
+			overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
+
+			await sleep(100);
+			new Notice('Choose "Save as PDF" in the print dialog');
+			window.print();
+
+			document.body.removeChild(overlay);
+			overlay = undefined;
+		} finally {
+			if (overlay?.isConnected) {
+				overlay.remove();
+			}
+			if (tmp.isConnected) {
+				tmp.remove();
+			}
+			renderOwner.unload();
 		}
-
-		const overlay = document.createElement("div");
-		overlay.id = "theme-pdf-overlay";
-		const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
-		overlay.classList.add("markdown-preview-view", "markdown-rendered", themeClass);
-		for (const c of printPageClassNames(this.settings.pageSize, this.settings.orientation)) {
-			overlay.classList.add(c);
-		}
-
-		while (tmp.firstChild) {
-			overlay.appendChild(tmp.firstChild);
-		}
-		document.body.removeChild(tmp);
-		document.body.appendChild(overlay);
-
-		const marginSpec = this.settings.margins.trim();
-		const overlayPadding = /\s/.test(marginSpec)
-			? marginSpec
-			: `calc(${marginSpec} * 1.4) ${marginSpec}`;
-		overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
-
-		await sleep(100);
-		new Notice('Choose "Save as PDF" in the print dialog');
-		window.print();
-
-		document.body.removeChild(overlay);
 	}
 
 	async loadSettings() {
@@ -120,7 +136,7 @@ class ThemePdfSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		new Setting(containerEl).setName("Theme PDF export").setHeading();
+		new Setting(containerEl).setName("Themed PDF export").setHeading();
 
 		new Setting(containerEl)
 			.setName("Page size")
