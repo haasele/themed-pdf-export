@@ -37,7 +37,7 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
       if (view == null ? void 0 : view.file) {
         void this.exportNote(view.file);
       } else {
-        new import_obsidian.Notice("Open a markdown note first.");
+        new import_obsidian.Notice("Open a Markdown note first.");
       }
     });
     this.addCommand({
@@ -60,33 +60,47 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
     const tmp = document.createElement("div");
     tmp.classList.add("theme-pdf-export-tmp");
     document.body.appendChild(tmp);
-    const content = await this.app.vault.read(file);
-    await import_obsidian.MarkdownRenderer.render(this.app, content, tmp, file.path, this);
-    await sleep(800);
-    if (this.settings.includeTitle) {
-      const title = resolveExportTitle(this.app, file);
-      const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
-      tmp.prepend(h1);
+    const renderOwner = new import_obsidian.Component();
+    renderOwner.load();
+    let overlay;
+    try {
+      const content = await this.app.vault.read(file);
+      await import_obsidian.MarkdownRenderer.render(this.app, content, tmp, file.path, renderOwner);
+      await sleep(800);
+      if (this.settings.includeTitle) {
+        const title = resolveExportTitle(this.app, file);
+        const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
+        tmp.prepend(h1);
+      }
+      overlay = document.createElement("div");
+      overlay.id = "theme-pdf-overlay";
+      const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
+      overlay.classList.add("markdown-preview-view", "markdown-rendered", themeClass);
+      for (const c of printPageClassNames(this.settings.pageSize, this.settings.orientation)) {
+        overlay.classList.add(c);
+      }
+      while (tmp.firstChild) {
+        overlay.appendChild(tmp.firstChild);
+      }
+      document.body.removeChild(tmp);
+      document.body.appendChild(overlay);
+      const marginSpec = this.settings.margins.trim();
+      const overlayPadding = /\s/.test(marginSpec) ? marginSpec : `calc(${marginSpec} * 1.4) ${marginSpec}`;
+      overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
+      await sleep(100);
+      new import_obsidian.Notice('Choose "Save as PDF" in the print dialog');
+      window.print();
+      document.body.removeChild(overlay);
+      overlay = void 0;
+    } finally {
+      if (overlay == null ? void 0 : overlay.isConnected) {
+        overlay.remove();
+      }
+      if (tmp.isConnected) {
+        tmp.remove();
+      }
+      renderOwner.unload();
     }
-    const overlay = document.createElement("div");
-    overlay.id = "theme-pdf-overlay";
-    const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
-    overlay.classList.add("markdown-preview-view", "markdown-rendered", themeClass);
-    for (const c of printPageClassNames(this.settings.pageSize, this.settings.orientation)) {
-      overlay.classList.add(c);
-    }
-    while (tmp.firstChild) {
-      overlay.appendChild(tmp.firstChild);
-    }
-    document.body.removeChild(tmp);
-    document.body.appendChild(overlay);
-    const marginSpec = this.settings.margins.trim();
-    const overlayPadding = /\s/.test(marginSpec) ? marginSpec : `calc(${marginSpec} * 1.4) ${marginSpec}`;
-    overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
-    await sleep(100);
-    new import_obsidian.Notice('Choose "Save as PDF" in the print dialog');
-    window.print();
-    document.body.removeChild(overlay);
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -103,7 +117,7 @@ var ThemePdfSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Theme PDF export").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Themed PDF export").setHeading();
     new import_obsidian.Setting(containerEl).setName("Page size").addDropdown(
       (d) => d.addOption("A4", "A4").addOption("Letter", "Letter").addOption("A3", "A3").setValue(this.plugin.settings.pageSize).onChange((v) => {
         this.plugin.settings.pageSize = v;
