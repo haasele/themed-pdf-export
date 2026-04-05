@@ -1,0 +1,111 @@
+/* Off-screen host for MarkdownRenderer (not shown on screen) */
+.theme-pdf-export-tmp {
+	position: absolute;
+	left: -99999px;
+	top: 0;
+	width: 800px;
+}
+
+/* Named pages: size/orientation from plugin settings via class pairs on #theme-pdf-overlay */
+@page themePdfA4Portrait {
+	size: A4;
+	margin: 0 !important;
+}
+
+@page themePdfA4Landscape {
+	size: A4 landscape;
+	margin: 0 !important;
+}
+
+@page themePdfLetterPortrait {
+	size: Letter;
+	margin: 0 !important;
+}
+
+@page themePdfLetterLandscape {
+	size: Letter landscape;
+	margin: 0 !important;
+}
+
+@page themePdfA3Portrait {
+	size: A3;
+	margin: 0 !important;
+}
+
+@page themePdfA3Landscape {
+	size: A3 landscape;
+	margin: 0 !important;
+}
+
+@media screen {
+	#theme-pdf-overlay {
+		display: none !important;
+	}
+}
+
+@media print {
+	#theme-pdf-overlay.theme-pdf-page-a4.theme-pdf-orient-portrait {
+		page: themePdfA4Portrait;
+	}
+
+	#theme-pdf-overlay.theme-pdf-page-a4.theme-pdf-orient-landscape {
+		page: themePdfA4Landscape;
+	}
+
+	#theme-pdf-overlay.theme-pdf-page-letter.theme-pdf-orient-portrait {
+		page: themePdfLetterPortrait;
+	}
+
+	#theme-pdf-overlay.theme-pdf-page-letter.theme-pdf-orient-landscape {
+		page: themePdfLetterLandscape;
+	}
+
+	#theme-pdf-overlay.theme-pdf-page-a3.theme-pdf-orient-portrait {
+		page: themePdfA3Portrait;
+	}
+
+	#theme-pdf-overlay.theme-pdf-page-a3.theme-pdf-orient-landscape {
+		page: themePdfA3Landscape;
+	}
+
+	/* Full-bleed theme to sheet edges; content inset from overlay padding (CSS var set in TS) */
+	html,
+	body {
+		margin: 0 !important;
+		padding: 0 !important;
+		background-color: var(--background-primary) !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
+	body > *:not(#theme-pdf-overlay) {
+		display: none !important;
+		visibility: hidden !important;
+	}
+
+	/*
+	 * Static flow = multipage; box-decoration-break: clone repeats padding on every fragment.
+	 * Padding value from --theme-pdf-overlay-padding (set via setCssProps before print).
+	 */
+	#theme-pdf-overlay {
+		display: block !important;
+		position: static !important;
+		width: 100% !important;
+		margin: 0 !important;
+		padding: var(--theme-pdf-overlay-padding, 0) !important;
+		box-sizing: border-box !important;
+		box-decoration-break: clone !important;
+		-webkit-box-decoration-break: clone !important;
+		overflow: visible !important;
+		background-color: var(--background-primary) !important;
+		color: var(--text-normal) !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
+	#theme-pdf-overlay img,
+	#theme-pdf-overlay video,
+	#theme-pdf-overlay svg {
+		max-width: 100% !important;
+	}
+}
