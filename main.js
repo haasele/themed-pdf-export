@@ -88,7 +88,7 @@ var ThemedPdfExport = class extends import_obsidian.Plugin {
       const overlayPadding = /\s/.test(marginSpec) ? marginSpec : `calc(${marginSpec} * 1.4) ${marginSpec}`;
       overlay.setCssProps({ "--theme-pdf-overlay-padding": overlayPadding });
       await sleep(100);
-      new import_obsidian.Notice('Choose "Save as PDF" in the print dialog');
+      new import_obsidian.Notice('Choose "Save as PDF" in the print dialog.');
       window.print();
       document.body.removeChild(overlay);
       overlay = void 0;
@@ -130,7 +130,7 @@ var ThemePdfSettingTab = class extends import_obsidian.PluginSettingTab {
         void this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Include title").setDesc("Add the note title (Properties title, or file name) above the note body in the PDF.").addToggle(
+    new import_obsidian.Setting(containerEl).setName("Include title").setDesc("Add the note title (properties title, or file name) above the note body in the PDF.").addToggle(
       (t) => t.setValue(this.plugin.settings.includeTitle).onChange((v) => {
         this.plugin.settings.includeTitle = v;
         void this.plugin.saveSettings();
