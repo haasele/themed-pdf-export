@@ -137,7 +137,7 @@ class ThemePdfSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 		new Setting(containerEl)
-		.setName("Export Settings")
+		.setName("Export")
 		.setHeading();
 
 		new Setting(containerEl)
