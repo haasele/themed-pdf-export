@@ -9,6 +9,7 @@ import {
 	MarkdownRenderer,
 	MarkdownView,
 } from "obsidian";
+import { cloneActiveNoteDom } from "./cloneExportDom";
 
 type PageOrientation = "portrait" | "landscape";
 
@@ -17,6 +18,7 @@ interface ThemePdfSettings {
 	margins: string;
 	orientation: PageOrientation;
 	includeTitle: boolean;
+	accentCodeBlocks: boolean;
 }
 
 const DEFAULT_SETTINGS: ThemePdfSettings = {
@@ -24,6 +26,13 @@ const DEFAULT_SETTINGS: ThemePdfSettings = {
 	margins: "20mm",
 	orientation: "portrait",
 	includeTitle: false,
+	accentCodeBlocks: false,
+};
+
+type ExportBuildResult = {
+	root: HTMLElement;
+	cleanup?: () => void;
+	usedFallbackRender: boolean;
 };
 
 export default class ThemedPdfExport extends Plugin {
@@ -60,37 +69,43 @@ export default class ThemedPdfExport extends Plugin {
 	async exportNote(file: TFile) {
 		new Notice(`Rendering "${file.basename}"…`);
 
-		const tmp = document.createElement("div");
-		tmp.classList.add("theme-pdf-export-tmp");
-		document.body.appendChild(tmp);
-
-		const renderOwner = new Component();
-		renderOwner.load();
-
 		let overlay: HTMLDivElement | undefined;
+		let buildCleanup: (() => void) | undefined;
+
 		try {
-			const content = await this.app.vault.read(file);
-			await MarkdownRenderer.render(this.app, content, tmp, file.path, renderOwner);
-			await sleep(800);
+			const { root, cleanup, usedFallbackRender } = await this.buildExportRoot(file);
+			buildCleanup = cleanup;
+
+			if (usedFallbackRender) {
+				new Notice(
+					"Exported with re-rendered code blocks (open this note to match on-screen colors).",
+					5000,
+				);
+			}
 
 			if (this.settings.includeTitle) {
 				const title = resolveExportTitle(this.app, file);
-				const h1 = tmp.createEl("h1", { cls: "inline-title", text: title });
-				tmp.prepend(h1);
+				const h1 = root.createEl("h1", { cls: "inline-title", text: title });
+				root.prepend(h1);
 			}
 
 			overlay = document.createElement("div");
 			overlay.id = "theme-pdf-overlay";
 			const themeClass = document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-light";
 			overlay.classList.add("markdown-preview-view", "markdown-rendered", themeClass);
+			if (root.classList.contains("is-live-preview")) {
+				overlay.classList.add("is-live-preview", "mod-cm6");
+			}
+			if (root.classList.contains("theme-pdf-colors-frozen")) {
+				overlay.classList.add("theme-pdf-colors-frozen");
+			}
 			for (const c of printPageClassNames(this.settings.pageSize, this.settings.orientation)) {
 				overlay.classList.add(c);
 			}
 
-			while (tmp.firstChild) {
-				overlay.appendChild(tmp.firstChild);
+			while (root.firstChild) {
+				overlay.appendChild(root.firstChild);
 			}
-			document.body.removeChild(tmp);
 			document.body.appendChild(overlay);
 
 			const marginSpec = this.settings.margins.trim();
@@ -109,11 +124,46 @@ export default class ThemedPdfExport extends Plugin {
 			if (overlay?.isConnected) {
 				overlay.remove();
 			}
-			if (tmp.isConnected) {
-				tmp.remove();
-			}
-			renderOwner.unload();
+			buildCleanup?.();
 		}
+	}
+
+	async buildExportRoot(file: TFile): Promise<ExportBuildResult> {
+		if (!this.settings.accentCodeBlocks) {
+			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (view?.file === file) {
+				const cloned = await cloneActiveNoteDom(view);
+				if (cloned) {
+					return { root: cloned, usedFallbackRender: false };
+				}
+			}
+		}
+
+		return this.renderExportRoot(file);
+	}
+
+	async renderExportRoot(file: TFile): Promise<ExportBuildResult> {
+		const tmp = document.createElement("div");
+		tmp.classList.add("theme-pdf-export-tmp");
+		document.body.appendChild(tmp);
+
+		const renderOwner = new Component();
+		renderOwner.load();
+
+		const content = await this.app.vault.read(file);
+		await MarkdownRenderer.render(this.app, content, tmp, file.path, renderOwner);
+		await sleep(800);
+
+		return {
+			root: tmp,
+			usedFallbackRender: !this.settings.accentCodeBlocks,
+			cleanup: () => {
+				renderOwner.unload();
+				if (tmp.isConnected) {
+					tmp.remove();
+				}
+			},
+		};
 	}
 
 	async loadSettings() {
@@ -173,6 +223,18 @@ class ThemePdfSettingTab extends PluginSettingTab {
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.includeTitle).onChange((v) => {
 					this.plugin.settings.includeTitle = v;
+					void this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Accent-colored code blocks")
+			.setDesc(
+				"When enabled, code blocks are re-rendered and may pick up your accent color. When disabled (default), export matches the note as shown.",
+			)
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.accentCodeBlocks).onChange((v) => {
+					this.plugin.settings.accentCodeBlocks = v;
 					void this.plugin.saveSettings();
 				})
 			);

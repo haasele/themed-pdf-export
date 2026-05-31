@@ -103,6 +103,21 @@
 		print-color-adjust: exact !important;
 	}
 
+	/* Pseudo-element borders are replaced with frozen .theme-pdf-pseudo-freeze spans */
+	#theme-pdf-overlay.theme-pdf-colors-frozen .code-block::before,
+	#theme-pdf-overlay.theme-pdf-colors-frozen .code-block::after,
+	#theme-pdf-overlay.theme-pdf-colors-frozen pre::before,
+	#theme-pdf-overlay.theme-pdf-colors-frozen pre::after,
+	#theme-pdf-overlay.theme-pdf-colors-frozen .cm-embed-block::before,
+	#theme-pdf-overlay.theme-pdf-colors-frozen .cm-embed-block::after {
+		content: none !important;
+		display: none !important;
+	}
+
+	#theme-pdf-overlay.theme-pdf-colors-frozen .theme-pdf-pseudo-freeze {
+		pointer-events: none !important;
+	}
+
 	#theme-pdf-overlay img,
 	#theme-pdf-overlay video,
 	#theme-pdf-overlay svg {
